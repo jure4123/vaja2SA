@@ -1,0 +1,1 @@
+print("Hello iz Python aplikacije")

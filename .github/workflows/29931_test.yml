@@ -1,0 +1,54 @@
+name: Testiranje projekta
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  preveri-teste:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Preveri test skripte
+        run: |
+          if [ ! -f "tests/test.sh" ]; then
+            echo "Ni test skripte!" 2> napaka.txt
+            exit 1
+          else
+            echo "" > napaka.txt
+          fi
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: napaka
+          path: napaka.txt
+
+  zazeni-teste:
+    runs-on: self-hosted
+    needs: preveri-teste
+
+    strategy:
+      matrix:
+        compiler: [g++, clang++]   # 👈 MATRIX!
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: napaka
+
+      - name: Preveri napako
+        run: |
+          if [ -s napaka.txt ]; then
+            echo "Napaka obstaja"
+            exit 1
+          fi
+
+      - name: Install compiler
+        run: sudo apt-get update && sudo apt-get install -y ${{ matrix.compiler }}
+
+      - name: Zaženi teste
+        run: bash tests/test.sh
